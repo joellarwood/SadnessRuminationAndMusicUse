@@ -1,0 +1,130 @@
+---
+title: "Study 1"
+output:
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ez)
+library(emmeans)
+library(sjPlot)
+library(sjmisc)
+library(skimr)
+library(psych)
+library(effsize)
+```
+
+```{r load S1, message=FALSE, warning = FALSE}
+s1raw <- read_csv("../data/study1_RMER.csv") %>% 
+  select(id,
+         Age,
+         Gender,
+         Condition, 
+         MusicInfo4_1,
+         contains("RRQ"),
+         contains("POMS"),
+         contains("MARS")) %>% 
+  mutate(Condition = factor(Condition, 
+                            levels = c(1, 2, 3),
+                            labels = c("Control", "Experimenter Selected", "Self Selected")),
+         Gender = as.factor(Gender),
+         id = as.factor(id))
+```
+
+# Create Scores 
+
+```{r scores}
+s1dat <- s1raw %>% 
+  mutate(Baseline = rowSums(select(., POMSDSF1_1:POMSDSF8_1)),
+         PostInduction = rowSums(select(., POMSDSF1_2:POMSDSF8_2)),
+         PostListening = rowSums(select(., POMSDSF1_3:POMSDSF8_3)),
+         MARS_Pos = rowMeans(select(., MARS1_1,
+                                    MARS2_1,
+                                    MARS6_1,
+                                    MARS7_1, 
+                                    MARS8_1,
+                                    MARS9_1,
+                                    MARS11_1,
+                                    MARS12_1,
+                                    MARS14_1,
+                                    MARS15_1)),
+         MARS_Neg = rowMeans(select(., MARS3_1,
+                                    MARS4_1,
+                                    MARS5_1,
+                                    MARS10_1,
+                                    MARS13_1)),
+         RRQ6_1 = 6 - .$RRQ6_1,
+         RRQ9_1 = 6 - .$RRQ9_1,
+         RRQ10_1 = 6 - .$RRQ10_1) 
+
+s1dat <- s1dat %>%  mutate(Rumination = rowMeans(select(., RRQ1_1:RRQ12_1)))
+s1dat <- s1dat %>% mutate(RumSplit = dicho(.$Rumination, val.labels = c("Low Rumiantion", "High Rumination")))
+
+s1dat %>% 
+  select(Baseline, PostInduction, PostListening, Rumination, MARS_Pos, MARS_Neg) %>%
+  skimr::skim() %>% 
+  skimr::kable()
+
+```
+
+# Reliabilities 
+```{r alphas}
+# Baseline ALpha 
+psych::alpha(select(s1dat, POMSDSF1_1:POMSDSF8_1 ))$total$raw_alpha
+
+# Post Induction Alpha
+psych::alpha(select(s1dat, POMSDSF1_2:POMSDSF8_2 ))$total$raw_alpha
+
+# Post Listening Alpha 
+psych::alpha(select(s1dat, POMSDSF1_3:POMSDSF8_3 ))$total$raw_alpha
+
+# Rumination Alpha 
+psych::alpha(select(s1dat, RRQ1_1:RRQ12_1 ))$total$raw_alpha
+
+# MARS Positive Alpha 
+psych::alpha(select(s1dat, MARS1_1,
+                    MARS2_1,
+                    MARS6_1,
+                    MARS7_1, 
+                    MARS8_1,
+                    MARS9_1,
+                    MARS11_1,
+                    MARS12_1,
+                    MARS14_1,
+                    MARS15_1))$total$raw_alpha
+
+
+#MARS Negative Alpha 
+psych::alpha(select(s1dat, MARS3_1,
+                    MARS4_1,
+                    MARS5_1,
+                    MARS10_1,
+                    MARS13_1))$total$raw_alpha
+
+```
+
+# ANOVA 
+```{r ANOVA}
+
+s1long <-  gather(s1dat,
+                  key = Timepoint, 
+                  value = Sadness,
+                  Baseline, PostInduction, PostListening)
+
+
+ANOVAs1 <- afex::aov_ez(id = "id",
+                        data = s1long,
+                       dv = "Sadness",
+                       between = c("Condition", "RumSplit"),
+                       within = "Timepoint",
+                       type = 2,
+                       print.formula = TRUE)
+  
+```
+
+
+
+
