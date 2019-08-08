@@ -49,7 +49,13 @@ s1dat <- s1raw %>%
                                     MARS13_1)),
          RRQ6_1 = 6 - .$RRQ6_1,
          RRQ9_1 = 6 - .$RRQ9_1,
-         RRQ10_1 = 6 - .$RRQ10_1) 
+         RRQ10_1 = 6 - .$RRQ10_1, 
+         Condition = as.factor(Condition),
+         Condition = fct_recode(Condition, 
+                                "Control" = "1", 
+                                "Self Selected" = "2",
+                                "Experimeter Selected" = "3")
+         ) 
 
 s1dat <- s1dat %>%  mutate(Rumination = rowMeans(dplyr::select(., RRQ1_1:RRQ12_1)))
 s1dat <- s1dat %>% mutate(RumSplit = dicho(.$Rumination, val.labels = c("Low Rumiantion", "High Rumination")))
@@ -59,9 +65,6 @@ s1dat %>%
   skimr::skim() %>% 
   skimr::kable()
 
-s1dat %>% 
-  select(Baseline, PostInduction, PostListening, Rumination, MARS_Pos, MARS_Neg) %>% 
-  vis_dat()
 ```
 
 # Reliabilities 
@@ -99,13 +102,7 @@ psych::alpha(dplyr::select(s1dat, MARS3_1,
                     MARS13_1))$total$raw_alpha
 
 ```
-## Manipulation Check 
 
-```{r manipulation check}
-
-t_apa(t.test(s1dat$PostInduction, s1dat$Baseline, paired = TRUE))
-
-```
 
 ## ANOVA 
 
@@ -114,7 +111,7 @@ s1long <- gather (
   s1dat,
   key = Timepoint,
   value = Sadness,
-  PostInduction, PostListening
+  Baseline, PostInduction, PostListening
 )
 
 ANOVAs1 <- afex::aov_car(
@@ -123,47 +120,19 @@ ANOVAs1 <- afex::aov_car(
   type = 2,
 )
 
-summary(ANOVAs1)
+afex::nice(ANOVAs1)
 
-anova_apa(ANOVAs1, 
-          sph_corr = "gg",
-          es = "ges",
-          format = "html")
+afex::afex_plot(ANOVAs1,
+                x = "Timepoint",
+                trace = "Condition", 
+                mapping = "color",
+                data_plot = FALSE) +
+  ggplot2::theme_classic() + 
+  ggplot2::scale_x_discrete(labels = c("Baselie", "Post Induction", "Post Listening")) +
+  ggplot2::ylim(0, 15) +
+  ggplot2::theme(legend.title = element_blank())
 
-
-```
-
-
-
-# ANOVA 
-
-```{r ANOVA}
-
-s1long <-  gather(s1dat,
-                  key = Timepoint, 
-                  value = Sadness,
-                  Baseline, PostInduction, PostListening)
-
-ANOVAs1 <- afex::aov_ez(id = "id",
-                        data = s1long,
-                       dv = "Sadness",
-                       between = c("Condition", "RumSplit"),
-                       within = "Timepoint",
-                       type = 2)
-
-knitr::kable(anova(ANOVAs1))
-
-emmip(s1interact, Condition ~ Timepoint)
-
-s1time <- emmeans(ANOVAs1, pairwise ~ Timepoint | Condition)
-
-summary(s1time)
-
-contrast(s1time,
-         interaction = TRUE)
+pairs(emmeans(ANOVAs1, ~ Timepoint|Condition))
 
 ```
-
-
-
 
