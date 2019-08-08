@@ -17,3 +17,4 @@ vignettes/*.pdf
 
 #DS Store 
 .DS_Store
+.Rproj.user

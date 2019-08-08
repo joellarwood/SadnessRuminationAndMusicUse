@@ -9,6 +9,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ez)
+library(apa)
+library(visdat)
 library(emmeans)
 library(sjPlot)
 library(sjmisc)
@@ -18,20 +20,9 @@ library(effsize)
 ```
 
 ```{r load S1, message=FALSE, warning = FALSE}
-s1raw <- read_csv("../data/study1_RMER.csv") %>% 
-  select(id,
-         Age,
-         Gender,
-         Condition, 
-         MusicInfo4_1,
-         contains("RRQ"),
-         contains("POMS"),
-         contains("MARS")) %>% 
-  mutate(Condition = factor(Condition, 
-                            levels = c(1, 2, 3),
-                            labels = c("Control", "Experimenter Selected", "Self Selected")),
-         Gender = as.factor(Gender),
-         id = as.factor(id))
+s1raw <- read_csv("../data/s1.csv") 
+
+names(s1raw)
 ```
 
 # Create Scores 
@@ -68,6 +59,9 @@ s1dat %>%
   skimr::skim() %>% 
   skimr::kable()
 
+s1dat %>% 
+  select(Baseline, PostInduction, PostListening, Rumination, MARS_Pos, MARS_Neg) %>% 
+  vis_dat()
 ```
 
 # Reliabilities 
@@ -105,8 +99,44 @@ psych::alpha(select(s1dat, MARS3_1,
                     MARS13_1))$total$raw_alpha
 
 ```
+## Manipulation Check 
+
+```{r manipulation check}
+
+t_apa(t.test(s1dat$PostInduction, s1dat$Baseline, paired = TRUE))
+
+```
+
+## ANOVA 
+
+```{r}
+s1long <- gather (
+  s1dat,
+  key = Timepoint,
+  value = Sadness,
+  PostInduction, PostListening
+)
+
+ANOVAs1 <- afex::aov_car(
+  formula = Sadness ~ Timepoint*Condition*RumSplit + Error(id/Timepoint),
+  data = s1long,
+  type = 2,
+)
+
+summary(ANOVAs1)
+
+anova_apa(ANOVAs1, 
+          sph_corr = "gg",
+          es = "ges",
+          format = "html")
+
+
+```
+
+
 
 # ANOVA 
+
 ```{r ANOVA}
 
 s1long <-  gather(s1dat,
