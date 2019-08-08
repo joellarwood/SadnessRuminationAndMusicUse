@@ -16,7 +16,7 @@ library(sjPlot)
 library(sjmisc)
 library(skimr)
 library(psych)
-library(effsize)
+library(multcomp)
 ```
 
 ```{r load S1, message=FALSE, warning = FALSE}
@@ -29,10 +29,10 @@ names(s1raw)
 
 ```{r scores}
 s1dat <- s1raw %>% 
-  mutate(Baseline = rowSums(select(., POMSDSF1_1:POMSDSF8_1)),
-         PostInduction = rowSums(select(., POMSDSF1_2:POMSDSF8_2)),
-         PostListening = rowSums(select(., POMSDSF1_3:POMSDSF8_3)),
-         MARS_Pos = rowMeans(select(., MARS1_1,
+  mutate(Baseline = rowSums(dplyr::select(., POMSDSF1_1:POMSDSF8_1)),
+         PostInduction = rowSums(dplyr::select(., POMSDSF1_2:POMSDSF8_2)),
+         PostListening = rowSums(dplyr::select(., POMSDSF1_3:POMSDSF8_3)),
+         MARS_Pos = rowMeans(dplyr::select(., MARS1_1,
                                     MARS2_1,
                                     MARS6_1,
                                     MARS7_1, 
@@ -42,7 +42,7 @@ s1dat <- s1raw %>%
                                     MARS12_1,
                                     MARS14_1,
                                     MARS15_1)),
-         MARS_Neg = rowMeans(select(., MARS3_1,
+         MARS_Neg = rowMeans(dplyr::select(., MARS3_1,
                                     MARS4_1,
                                     MARS5_1,
                                     MARS10_1,
@@ -51,11 +51,11 @@ s1dat <- s1raw %>%
          RRQ9_1 = 6 - .$RRQ9_1,
          RRQ10_1 = 6 - .$RRQ10_1) 
 
-s1dat <- s1dat %>%  mutate(Rumination = rowMeans(select(., RRQ1_1:RRQ12_1)))
+s1dat <- s1dat %>%  mutate(Rumination = rowMeans(dplyr::select(., RRQ1_1:RRQ12_1)))
 s1dat <- s1dat %>% mutate(RumSplit = dicho(.$Rumination, val.labels = c("Low Rumiantion", "High Rumination")))
 
 s1dat %>% 
-  select(Baseline, PostInduction, PostListening, Rumination, MARS_Pos, MARS_Neg) %>%
+  dplyr::select(Baseline, PostInduction, PostListening, Rumination, MARS_Pos, MARS_Neg) %>%
   skimr::skim() %>% 
   skimr::kable()
 
@@ -67,19 +67,19 @@ s1dat %>%
 # Reliabilities 
 ```{r alphas}
 # Baseline ALpha 
-psych::alpha(select(s1dat, POMSDSF1_1:POMSDSF8_1 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, POMSDSF1_1:POMSDSF8_1 ))$total$raw_alpha
 
 # Post Induction Alpha
-psych::alpha(select(s1dat, POMSDSF1_2:POMSDSF8_2 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, POMSDSF1_2:POMSDSF8_2 ))$total$raw_alpha
 
 # Post Listening Alpha 
-psych::alpha(select(s1dat, POMSDSF1_3:POMSDSF8_3 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, POMSDSF1_3:POMSDSF8_3 ))$total$raw_alpha
 
 # Rumination Alpha 
-psych::alpha(select(s1dat, RRQ1_1:RRQ12_1 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, RRQ1_1:RRQ12_1 ))$total$raw_alpha
 
 # MARS Positive Alpha 
-psych::alpha(select(s1dat, MARS1_1,
+psych::alpha(dplyr::select(s1dat, MARS1_1,
                     MARS2_1,
                     MARS6_1,
                     MARS7_1, 
@@ -92,7 +92,7 @@ psych::alpha(select(s1dat, MARS1_1,
 
 
 #MARS Negative Alpha 
-psych::alpha(select(s1dat, MARS3_1,
+psych::alpha(dplyr::select(s1dat, MARS3_1,
                     MARS4_1,
                     MARS5_1,
                     MARS10_1,
@@ -144,15 +144,24 @@ s1long <-  gather(s1dat,
                   value = Sadness,
                   Baseline, PostInduction, PostListening)
 
-
 ANOVAs1 <- afex::aov_ez(id = "id",
                         data = s1long,
                        dv = "Sadness",
                        between = c("Condition", "RumSplit"),
                        within = "Timepoint",
-                       type = 2,
-                       print.formula = TRUE)
-  
+                       type = 2)
+
+knitr::kable(anova(ANOVAs1))
+
+emmip(s1interact, Condition ~ Timepoint)
+
+s1time <- emmeans(ANOVAs1, pairwise ~ Timepoint | Condition)
+
+summary(s1time)
+
+contrast(s1time,
+         interaction = TRUE)
+
 ```
 
 

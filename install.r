@@ -1,5 +1,5 @@
 install.packages("tidyverse")
-install.packages("ez")
+install.packages("afex")
 install.packages("sjPlot")
 install.packages("sjmisc")
 install.packages("devtools")
