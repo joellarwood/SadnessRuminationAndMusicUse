@@ -18,6 +18,7 @@ library(skimr)
 library(psych)
 library(multcomp)
 library(ggridges)
+library(ggrepel)
 ```
 
 ```{r load S1, message=FALSE, warning = FALSE}
@@ -147,7 +148,7 @@ s1dat %>%
 
 # Exploratory Analysis of Spotify variables 
 
-#Describe
+# Describe
 ```{r spotifydescribe}
 s1dat %>% 
   dplyr::select(contains("track"),
@@ -168,8 +169,35 @@ s1dat %>%
                 valence, energy, acousticness, danceability) %>% 
   ggplot2::ggplot(aes(x = value, y = Characteristic, color = Characteristic, fill = Characteristic)) + 
   ggridges::geom_density_ridges() + 
-  ggplot2::xlim(0,1)+
-  ggridges::theme_ridges()
+  ggplot2::xlim(0,1) +
+  ggplot2::theme_minimal() 
+
+s1dat %>%
+  dplyr::select(valence, energy, acousticness, danceability) %>% 
+  apaTables::apa.cor.table()
+
+
+s1dat %>% 
+  filter(mode == "minor" | mode == "major" & !is.na(track_name)) %>% 
+  ggplot2::ggplot(aes(x = valence,
+                      y = energy,
+                      color = mode)) +
+  facet_wrap(~ mode, ncol = 2) +
+  geom_point() +
+  geom_hline(yintercept = .5) +
+  geom_vline(xintercept =.5) +
+  ylim(0,1) +
+  xlim(0,1) +
+
+
+  ggplot2::geom_point(aes(color = mode)) +
+  ggplot2::geom_hline(yintercept = .5) +
+  ggplot2::geom_vline(xintercept =.5) + 
+  ggplot2::ylim(0,1) + 
+  ggplot2::xlim(0,1)
+
+
+
 
 ```
 
