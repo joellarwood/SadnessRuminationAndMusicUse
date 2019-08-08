@@ -17,6 +17,7 @@ library(sjmisc)
 library(skimr)
 library(psych)
 library(multcomp)
+library(ggridges)
 ```
 
 ```{r load S1, message=FALSE, warning = FALSE}
@@ -136,3 +137,40 @@ pairs(emmeans(ANOVAs1, ~ Timepoint|Condition))
 
 ```
 
+## Rumination Correlation 
+```{r}
+s1dat %>% 
+  dplyr::select("Rumination", "MARS_Neg", "MARS_Pos") %>% 
+  apaTables::apa.cor.table(filename = "s1MARScor.txt",
+                 landscape = FALSE)
+```
+
+# Exploratory Analysis of Spotify variables 
+
+#Describe
+```{r spotifydescribe}
+s1dat %>% 
+  dplyr::select(contains("track"),
+         contains("ness"),
+         energy,
+         mode,
+         valence,
+         duration_ms,
+         tempo,
+         time_signature,
+         artist_name) %>% 
+  skimr::skim() %>% 
+  skimr::kable(digits = 3)
+
+s1dat %>% 
+  tidyr::gather(key = Characteristic,
+                value = value,
+                valence, energy, acousticness, danceability) %>% 
+  ggplot2::ggplot(aes(x = value, y = Characteristic, color = Characteristic, fill = Characteristic)) + 
+  ggridges::geom_density_ridges() + 
+  ggplot2::xlim(0,1)+
+  ggridges::theme_ridges()
+
+```
+
+## Visualise time and 
