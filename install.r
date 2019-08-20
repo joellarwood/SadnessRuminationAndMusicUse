@@ -7,4 +7,6 @@ install.packages("visdat")
 install.packages("skimr")
 install.packages("psych")
 install.packages("emmeans")
+install.packages("lmerTest")
+install.package("brms")
 
