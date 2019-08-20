@@ -114,26 +114,41 @@ s1long <-  gather(s1dat,
                   value = Sadness,
                   Baseline, PostInduction, PostListening)
 
+
 ANOVAs1 <- afex::aov_ez(id = "id",
                         data = s1long,
-                       dv = "Sadness",
-                       between = c("Condition", "RumSplit"),
-                       within = "Timepoint",
-                       type = 2)
+                        dv = "Sadness",
+                        between = c("Condition", "RumSplit"),
+                        within = "Timepoint",
+                        type = 2)
 
 knitr::kable(anova(ANOVAs1))
 
-emmip(s1interact, Condition ~ Timepoint)
+
+
+
+afex_plot(ANOVAs1,
+          x = "Timepoint",
+          trace = "Condition",
+          error = "within",
+          mapping = "color",
+          data_plot = FALSE) +
+  scale_x_discrete(labels = c("Baseline", "Post Induction", "Post Listening")) +
+  scale_color_discrete(labels = c("No Music \nControl", "Experimenter Selected \nMusic", "Participant Selected \nMusic")) +
+  ggplot2::ylim(0, 15) +
+  ggplot2::theme_classic(base_size = 12, 
+                         base_family = "Times New Roman") +
+  ggplot2::theme(legend.title = element_blank()) 
+
+
+summary(emmeans(ANOVAs1, pairwise ~  Timepoint))
 
 s1time <- emmeans(ANOVAs1, pairwise ~ Timepoint | Condition)
 
-summary(s1time)
-
 contrast(s1time,
-         interaction = TRUE)
-
+         interaction = "pairwise")$emmeans 
 ```
 
-
+`
 
 

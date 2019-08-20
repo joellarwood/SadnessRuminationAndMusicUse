@@ -7,7 +7,7 @@ Study 1
 
 ``` r
 s1raw <- read_csv("../data/study1_RMER.csv") %>% 
-  select(id,
+  dplyr::select(id,
          Age,
          Gender,
          Condition, 
@@ -15,7 +15,7 @@ s1raw <- read_csv("../data/study1_RMER.csv") %>%
          contains("RRQ"),
          contains("POMS"),
          contains("MARS")) %>% 
-  mutate(Condition = factor(Condition, 
+  dplyr::mutate(Condition = factor(Condition, 
                             levels = c(1, 2, 3),
                             labels = c("Control", "Experimenter Selected", "Self Selected")),
          Gender = as.factor(Gender),
@@ -26,10 +26,10 @@ s1raw <- read_csv("../data/study1_RMER.csv") %>%
 
 ``` r
 s1dat <- s1raw %>% 
-  mutate(Baseline = rowSums(select(., POMSDSF1_1:POMSDSF8_1)),
-         PostInduction = rowSums(select(., POMSDSF1_2:POMSDSF8_2)),
-         PostListening = rowSums(select(., POMSDSF1_3:POMSDSF8_3)),
-         MARS_Pos = rowMeans(select(., MARS1_1,
+  mutate(Baseline = rowSums(dplyr::select(., POMSDSF1_1:POMSDSF8_1)),
+         PostInduction = rowSums(dplyr::select(., POMSDSF1_2:POMSDSF8_2)),
+         PostListening = rowSums(dplyr::select(., POMSDSF1_3:POMSDSF8_3)),
+         MARS_Pos = rowMeans(dplyr::select(., MARS1_1,
                                     MARS2_1,
                                     MARS6_1,
                                     MARS7_1, 
@@ -39,7 +39,7 @@ s1dat <- s1raw %>%
                                     MARS12_1,
                                     MARS14_1,
                                     MARS15_1)),
-         MARS_Neg = rowMeans(select(., MARS3_1,
+         MARS_Neg = rowMeans(dplyr::select(., MARS3_1,
                                     MARS4_1,
                                     MARS5_1,
                                     MARS10_1,
@@ -48,11 +48,11 @@ s1dat <- s1raw %>%
          RRQ9_1 = 6 - .$RRQ9_1,
          RRQ10_1 = 6 - .$RRQ10_1) 
 
-s1dat <- s1dat %>%  mutate(Rumination = rowMeans(select(., RRQ1_1:RRQ12_1)))
+s1dat <- s1dat %>%  mutate(Rumination = rowMeans(dplyr::select(., RRQ1_1:RRQ12_1)))
 s1dat <- s1dat %>% mutate(RumSplit = dicho(.$Rumination, val.labels = c("Low Rumiantion", "High Rumination")))
 
 s1dat %>% 
-  select(Baseline, PostInduction, PostListening, Rumination, MARS_Pos, MARS_Neg) %>%
+  dplyr::select(Baseline, PostInduction, PostListening, Rumination, MARS_Pos, MARS_Neg) %>%
   skimr::skim() %>% 
   skimr::kable()
 ```
@@ -76,35 +76,35 @@ s1dat %>%
 
 ``` r
 # Baseline ALpha 
-psych::alpha(select(s1dat, POMSDSF1_1:POMSDSF8_1 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, POMSDSF1_1:POMSDSF8_1 ))$total$raw_alpha
 ```
 
     ## [1] 0.9242407
 
 ``` r
 # Post Induction Alpha
-psych::alpha(select(s1dat, POMSDSF1_2:POMSDSF8_2 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, POMSDSF1_2:POMSDSF8_2 ))$total$raw_alpha
 ```
 
     ## [1] 0.9288304
 
 ``` r
 # Post Listening Alpha 
-psych::alpha(select(s1dat, POMSDSF1_3:POMSDSF8_3 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, POMSDSF1_3:POMSDSF8_3 ))$total$raw_alpha
 ```
 
     ## [1] 0.9435892
 
 ``` r
 # Rumination Alpha 
-psych::alpha(select(s1dat, RRQ1_1:RRQ12_1 ))$total$raw_alpha
+psych::alpha(dplyr::select(s1dat, RRQ1_1:RRQ12_1 ))$total$raw_alpha
 ```
 
     ## [1] 0.8891114
 
 ``` r
 # MARS Positive Alpha 
-psych::alpha(select(s1dat, MARS1_1,
+psych::alpha(dplyr::select(s1dat, MARS1_1,
                     MARS2_1,
                     MARS6_1,
                     MARS7_1, 
@@ -120,7 +120,7 @@ psych::alpha(select(s1dat, MARS1_1,
 
 ``` r
 #MARS Negative Alpha 
-psych::alpha(select(s1dat, MARS3_1,
+psych::alpha(dplyr::select(s1dat, MARS3_1,
                     MARS4_1,
                     MARS5_1,
                     MARS10_1,
@@ -132,140 +132,113 @@ psych::alpha(select(s1dat, MARS3_1,
 # ANOVA
 
 ``` r
-jmv::anovaRM(
-    data = s1dat,
-    rm = list(
-        list(
-            label="Timepoint",
-            levels=c(
-                "Baseline",
-                "Post Induction",
-                "Post Listening"))),
-    rmCells = list(
-        list(
-            measure="Baseline",
-            cell="Baseline"),
-        list(
-            measure="PostInduction",
-            cell="Post Induction"),
-        list(
-            measure="PostListening",
-            cell="Post Listening")),
-    bs = vars(Condition, RumSplit),
-    effectSize = "eta",
-    depLabel = "Sadness",
-    rmTerms = ~ Timepoint,
-    bsTerms = ~ Condition + RumSplit + Condition:RumSplit,
-    postHoc = list(
-        "Timepoint",
-        c("Timepoint", "Condition")),
-    emMeans = ~ Timepoint:Condition,
-    emmTables = TRUE)
+s1long <-  gather(s1dat,
+                  key = Timepoint, 
+                  value = Sadness,
+                  Baseline, PostInduction, PostListening)
+
+
+ANOVAs1 <- afex::aov_ez(id = "id",
+                        data = s1long,
+                        dv = "Sadness",
+                        between = c("Condition", "RumSplit"),
+                        within = "Timepoint",
+                        type = 2)
+```
+
+    ## Contrasts set to contr.sum for the following variables: Condition, RumSplit
+
+``` r
+knitr::kable(anova(ANOVAs1))
+```
+
+|                              |   num Df |   den Df |      MSE |          F |       ges |   Pr(\>F) |
+| ---------------------------- | -------: | -------: | -------: | ---------: | --------: | --------: |
+| Condition                    | 2.000000 | 122.0000 | 69.51726 |  0.8047651 | 0.0088720 | 0.4495524 |
+| RumSplit                     | 1.000000 | 122.0000 | 69.51726 |  8.5566376 | 0.0454262 | 0.0041061 |
+| Condition:RumSplit           | 2.000000 | 122.0000 | 69.51726 |  1.9444008 | 0.0211698 | 0.1474812 |
+| Timepoint                    | 1.894707 | 231.1543 | 17.38482 | 63.2588852 | 0.1428814 | 0.0000000 |
+| Condition:Timepoint          | 3.789414 | 231.1543 | 17.38482 |  2.7672314 | 0.0143748 | 0.0307199 |
+| RumSplit:Timepoint           | 1.894707 | 231.1543 | 17.38482 |  0.0128512 | 0.0000339 | 0.9844103 |
+| Condition:RumSplit:Timepoint | 3.789414 | 231.1543 | 17.38482 |  0.8790408 | 0.0046115 | 0.4725968 |
+
+``` r
+afex_plot(ANOVAs1,
+          x = "Timepoint",
+          trace = "Condition",
+          error = "within",
+          mapping = "color",
+          data_plot = FALSE) +
+  scale_x_discrete(labels = c("Baseline", "Post Induction", "Post Listening")) +
+  scale_color_discrete(labels = c("No Music \nControl", "Experimenter Selected \nMusic", "Participant Selected \nMusic")) +
+  ggplot2::ylim(0, 15) +
+  ggplot2::theme_classic(base_size = 12, 
+                         base_family = "Times New Roman") +
+  ggplot2::theme(legend.title = element_blank()) 
 ```
 
     ## NOTE: Results may be misleading due to involvement in interactions
+
+    ## Warning: Panel(s) show a mixed within-between-design.
+    ## Error bars do not allow comparisons across all means.
+    ## Suppress error bars with: error = "none"
+
+![](Study1_files/figure-gfm/ANOVA-1.png)<!-- -->
+
+``` r
+summary(emmeans(ANOVAs1, pairwise ~  Timepoint))
+```
+
     ## NOTE: Results may be misleading due to involvement in interactions
 
+    ## $emmeans
+    ##  Timepoint     emmean    SE  df lower.CL upper.CL
+    ##  Baseline        3.96 0.519 242     2.94     4.98
+    ##  PostInduction   9.53 0.519 242     8.50    10.55
+    ##  PostListening   5.39 0.519 242     4.37     6.41
     ## 
-    ##  REPEATED MEASURES ANOVA
+    ## Results are averaged over the levels of: Condition, RumSplit 
+    ## Warning: EMMs are biased unless design is perfectly balanced 
+    ## Confidence level used: 0.95 
     ## 
-    ##  Within Subjects Effects                                                                                
-    ##  ────────────────────────────────────────────────────────────────────────────────────────────────────── 
-    ##                                    Sum of Squares    df     Mean Square    F          p         η²      
-    ##  ────────────────────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Timepoint                             2068.757      2       1034.379    62.8055    < .001    0.063   
-    ##    Timepoint:Condition                    160.093      4         40.023     2.4301     0.048    0.005   
-    ##    Timepoint:RumSplit                       0.575      2          0.287     0.0174     0.983    0.000   
-    ##    Timepoint:Condition:RumSplit            57.910      4         14.477     0.8790     0.477    0.002   
-    ##    Residual                              4018.574    244         16.470                                 
-    ##  ────────────────────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Note. Type 3 Sums of Squares
+    ## $contrasts
+    ##  contrast                      estimate    SE  df t.ratio p.value
+    ##  Baseline - PostInduction         -5.57 0.516 244 -10.790 <.0001 
+    ##  Baseline - PostListening         -1.43 0.516 244  -2.770 0.0165 
+    ##  PostInduction - PostListening     4.14 0.516 244   8.020 <.0001 
     ## 
-    ## 
-    ##  Between Subjects Effects                                                                  
-    ##  ───────────────────────────────────────────────────────────────────────────────────────── 
-    ##                          Sum of Squares    df     Mean Square    F        p        η²      
-    ##  ───────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Condition                       45.8      2           22.9    0.329    0.720    0.001   
-    ##    RumSplit                       609.0      1          609.0    8.760    0.004    0.019   
-    ##    Condition:RumSplit             270.3      2          135.2    1.944    0.147    0.008   
-    ##    Residual                      8481.1    122           69.5                              
-    ##  ───────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Note. Type 3 Sums of Squares
-    ## 
-    ## 
-    ##  POST HOC TESTS
-    ## 
-    ##  Post Hoc Comparisons - Timepoint                                                                  
-    ##  ───────────────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Timepoint              Timepoint         Mean Difference    SE       df     t         p-tukey   
-    ##  ───────────────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Baseline          -    Post Induction              -5.57    0.516    244    -10.79    < .001   
-    ##                      -    Post Listening              -1.43    0.516    244     -2.77      0.017   
-    ##    Post Induction    -    Post Listening               4.14    0.516    244      8.02    < .001   
-    ##  ───────────────────────────────────────────────────────────────────────────────────────────────── 
-    ## 
-    ## 
-    ##  Post Hoc Comparisons - Timepoint:Condition                                                                                                           
-    ##  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Timepoint         Condition                     Timepoint         Condition                Mean Difference    SE       df     t          p-tukey   
-    ##  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
-    ##    Baseline          Control                  -    Baseline          Experimenter Selected             0.7292    1.291    238     0.5650      1.000   
-    ##                                               -    Baseline          Self Selected                    -0.3771    1.292    238    -0.2918      1.000   
-    ##                                               -    Post Induction    Control                          -4.8472    0.905    244    -5.3540    < .001   
-    ##                                               -    Post Induction    Experimenter Selected            -5.4197    1.291    238    -4.1993      0.001   
-    ##                                               -    Post Induction    Self Selected                    -6.0899    1.292    238    -4.7119    < .001   
-    ##                                               -    Post Listening    Control                          -0.3079    0.905    244    -0.3401      1.000   
-    ##                                               -    Post Listening    Experimenter Selected            -2.8297    1.291    238    -2.1925      0.414   
-    ##                                               -    Post Listening    Self Selected                    -0.8005    1.292    238    -0.6193      0.999   
-    ##                      Experimenter Selected    -    Baseline          Self Selected                    -1.1063    1.279    238    -0.8648      0.995   
-    ##                                               -    Post Induction    Control                          -5.5764    1.291    238    -4.3207    < .001   
-    ##                                               -    Post Induction    Experimenter Selected            -6.1489    0.887    244    -6.9317    < .001   
-    ##                                               -    Post Induction    Self Selected                    -6.8191    1.279    238    -5.3306    < .001   
-    ##                                               -    Post Listening    Control                          -1.0370    1.291    238    -0.8035      0.997   
-    ##                                               -    Post Listening    Experimenter Selected            -3.5589    0.887    244    -4.0120      0.003   
-    ##                                               -    Post Listening    Self Selected                    -1.5296    1.279    238    -1.1957      0.957   
-    ##                      Self Selected            -    Post Induction    Control                          -4.4701    1.292    238    -3.4586      0.018   
-    ##                                               -    Post Induction    Experimenter Selected            -5.0426    1.279    238    -3.9419      0.003   
-    ##                                               -    Post Induction    Self Selected                    -5.7128    0.890    244    -6.4216    < .001   
-    ##                                               -    Post Listening    Control                           0.0692    1.292    238     0.0536      1.000   
-    ##                                               -    Post Listening    Experimenter Selected            -2.4526    1.279    238    -1.9172      0.603   
-    ##                                               -    Post Listening    Self Selected                    -0.4233    0.890    244    -0.4759      1.000   
-    ##    Post Induction    Control                  -    Post Induction    Experimenter Selected            -0.5725    1.291    238    -0.4436      1.000   
-    ##                                               -    Post Induction    Self Selected                    -1.2427    1.292    238    -0.9615      0.989   
-    ##                                               -    Post Listening    Control                           4.5394    0.905    244     5.0139    < .001   
-    ##                                               -    Post Listening    Experimenter Selected             2.0175    1.291    238     1.5632      0.824   
-    ##                                               -    Post Listening    Self Selected                     4.0468    1.292    238     3.1311      0.050   
-    ##                      Experimenter Selected    -    Post Induction    Self Selected                    -0.6702    1.279    238    -0.5239      1.000   
-    ##                                               -    Post Listening    Control                           5.1119    1.291    238     3.9608      0.003   
-    ##                                               -    Post Listening    Experimenter Selected             2.5900    0.887    244     2.9198      0.089   
-    ##                                               -    Post Listening    Self Selected                     4.6193    1.279    238     3.6110      0.011   
-    ##                      Self Selected            -    Post Listening    Control                           5.7821    1.292    238     4.4737    < .001   
-    ##                                               -    Post Listening    Experimenter Selected             3.2602    1.279    238     2.5486      0.215   
-    ##                                               -    Post Listening    Self Selected                     5.2895    0.890    244     5.9457    < .001   
-    ##    Post Listening    Control                  -    Post Listening    Experimenter Selected            -2.5219    1.291    238    -1.9540      0.577   
-    ##                                               -    Post Listening    Self Selected                    -0.4926    1.292    238    -0.3811      1.000   
-    ##                      Experimenter Selected    -    Post Listening    Self Selected                     2.0293    1.279    238     1.5863      0.811   
-    ##  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
-    ## 
-    ## 
-    ##  ESTIMATED MARGINAL MEANS
-    ## 
-    ##  TIMEPOINT:CONDITION
-    ## 
-    ##  Estimated Marginal Means - Timepoint:Condition                                  
-    ##  ─────────────────────────────────────────────────────────────────────────────── 
-    ##    Condition                Timepoint         Mean     SE       Lower    Upper   
-    ##  ─────────────────────────────────────────────────────────────────────────────── 
-    ##    Control                  Baseline           4.08    0.913     2.28     5.87   
-    ##                             Post Induction     8.92    0.913     7.12    10.72   
-    ##                             Post Listening     4.38    0.913     2.58     6.18   
-    ##    Experimenter Selected    Baseline           3.35    0.903     1.57     5.13   
-    ##                             Post Induction     9.50    0.903     7.72    11.27   
-    ##                             Post Listening     6.91    0.903     5.13     8.68   
-    ##    Self Selected            Baseline           4.45    0.904     2.67     6.23   
-    ##                             Post Induction    10.17    0.904     8.38    11.95   
-    ##                             Post Listening     4.88    0.904     3.09     6.66   
-    ##  ───────────────────────────────────────────────────────────────────────────────
+    ## Results are averaged over the levels of: Condition, RumSplit 
+    ## P value adjustment: tukey method for comparing a family of 3 estimates
 
-![](Study1_files/figure-gfm/anova-1.png)<!-- -->
+``` r
+s1time <- emmeans(ANOVAs1, pairwise ~ Timepoint | Condition)
+```
+
+    ## NOTE: Results may be misleading due to involvement in interactions
+
+``` r
+contrast(s1time,
+         interaction = "pairwise")$emmeans
+```
+
+    ## Condition = Control:
+    ##  Timepoint_pairwise            estimate    SE  df t.ratio p.value
+    ##  Baseline - PostInduction        -4.847 0.905 244 -5.354  <.0001 
+    ##  Baseline - PostListening        -0.308 0.905 244 -0.340  0.7341 
+    ##  PostInduction - PostListening    4.539 0.905 244  5.014  <.0001 
+    ## 
+    ## Condition = Experimenter Selected:
+    ##  Timepoint_pairwise            estimate    SE  df t.ratio p.value
+    ##  Baseline - PostInduction        -6.149 0.887 244 -6.932  <.0001 
+    ##  Baseline - PostListening        -3.559 0.887 244 -4.012  0.0001 
+    ##  PostInduction - PostListening    2.590 0.887 244  2.920  0.0038 
+    ## 
+    ## Condition = Self Selected:
+    ##  Timepoint_pairwise            estimate    SE  df t.ratio p.value
+    ##  Baseline - PostInduction        -5.713 0.890 244 -6.422  <.0001 
+    ##  Baseline - PostListening        -0.423 0.890 244 -0.476  0.6346 
+    ##  PostInduction - PostListening    5.289 0.890 244  5.946  <.0001 
+    ## 
+    ## Results are averaged over the levels of: RumSplit
+
+\`
