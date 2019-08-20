@@ -8,30 +8,23 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(afex)
+library(ez)
+library(apa)
+library(visdat)
 library(emmeans)
 library(sjPlot)
 library(sjmisc)
 library(skimr)
 library(psych)
 library(multcomp)
+library(ggridges)
+library(ggrepel)
 ```
 
 ```{r load S1, message=FALSE, warning = FALSE}
-s1raw <- read_csv("../data/study1_RMER.csv") %>% 
-  dplyr::select(id,
-         Age,
-         Gender,
-         Condition, 
-         MusicInfo4_1,
-         contains("RRQ"),
-         contains("POMS"),
-         contains("MARS")) %>% 
-  dplyr::mutate(Condition = factor(Condition, 
-                            levels = c(1, 2, 3),
-                            labels = c("Control", "Experimenter Selected", "Self Selected")),
-         Gender = as.factor(Gender),
-         id = as.factor(id))
+s1raw <- read_csv("../data/s1.csv") 
+
+names(s1raw)
 ```
 
 # Create Scores 
@@ -58,7 +51,13 @@ s1dat <- s1raw %>%
                                     MARS13_1)),
          RRQ6_1 = 6 - .$RRQ6_1,
          RRQ9_1 = 6 - .$RRQ9_1,
-         RRQ10_1 = 6 - .$RRQ10_1) 
+         RRQ10_1 = 6 - .$RRQ10_1, 
+         Condition = as.factor(Condition),
+         Condition = fct_recode(Condition, 
+                                "Control" = "1", 
+                                "Self Selected" = "2",
+                                "Experimeter Selected" = "3")
+         ) 
 
 s1dat <- s1dat %>%  mutate(Rumination = rowMeans(dplyr::select(., RRQ1_1:RRQ12_1)))
 s1dat <- s1dat %>% mutate(RumSplit = dicho(.$Rumination, val.labels = c("Low Rumiantion", "High Rumination")))
@@ -106,14 +105,10 @@ psych::alpha(dplyr::select(s1dat, MARS3_1,
 
 ```
 
-# ANOVA 
-```{r ANOVA}
 
-s1long <-  gather(s1dat,
-                  key = Timepoint, 
-                  value = Sadness,
-                  Baseline, PostInduction, PostListening)
+## ANOVA 
 
+<<<<<<< HEAD
 
 ANOVAs1 <- afex::aov_ez(id = "id",
                         data = s1long,
@@ -121,9 +116,23 @@ ANOVAs1 <- afex::aov_ez(id = "id",
                         between = c("Condition", "RumSplit"),
                         within = "Timepoint",
                         type = 2)
+=======
+```{r}
+s1long <- gather (
+  s1dat,
+  key = Timepoint,
+  value = Sadness,
+  Baseline, PostInduction, PostListening
+)
+>>>>>>> master
 
-knitr::kable(anova(ANOVAs1))
+ANOVAs1 <- afex::aov_car(
+  formula = Sadness ~ Timepoint*Condition*RumSplit + Error(id/Timepoint),
+  data = s1long,
+  type = 2,
+)
 
+<<<<<<< HEAD
 
 
 
@@ -148,7 +157,86 @@ s1time <- emmeans(ANOVAs1, pairwise ~ Timepoint | Condition)
 contrast(s1time,
          interaction = "pairwise")$emmeans 
 ```
+=======
+afex::nice(ANOVAs1)
+
+afex::afex_plot(ANOVAs1,
+                x = "Timepoint",
+                trace = "Condition", 
+                mapping = "color",
+                data_plot = FALSE) +
+  ggplot2::theme_classic() + 
+  ggplot2::scale_x_discrete(labels = c("Baselie", "Post Induction", "Post Listening")) +
+  ggplot2::ylim(0, 15) +
+  ggplot2::theme(legend.title = element_blank())
+
+pairs(emmeans(ANOVAs1, ~ Timepoint|Condition))
+
+```
+
+## Rumination Correlation 
+```{r}
+s1dat %>% 
+  dplyr::select("Rumination", "MARS_Neg", "MARS_Pos") %>% 
+  apaTables::apa.cor.table(filename = "s1MARScor.txt",
+                 landscape = FALSE)
+```
+
+# Exploratory Analysis of Spotify variables 
+
+# Describe
+```{r spotifydescribe}
+s1dat %>% 
+  dplyr::select(contains("track"),
+         contains("ness"),
+         energy,
+         mode,
+         valence,
+         duration_ms,
+         tempo,
+         time_signature,
+         artist_name) %>% 
+  skimr::skim() %>% 
+  skimr::kable(digits = 3)
+
+s1dat %>% 
+  tidyr::gather(key = Characteristic,
+                value = value,
+                valence, energy, acousticness, danceability) %>% 
+  ggplot2::ggplot(aes(x = value, y = Characteristic, color = Characteristic, fill = Characteristic)) + 
+  ggridges::geom_density_ridges() + 
+  ggplot2::xlim(0,1) +
+  ggplot2::theme_minimal() 
+
+s1dat %>%
+  dplyr::select(valence, energy, acousticness, danceability) %>% 
+  apaTables::apa.cor.table()
+>>>>>>> master
 
 `
 
+s1dat %>% 
+  filter(mode == "minor" | mode == "major" & !is.na(track_name)) %>% 
+  ggplot2::ggplot(aes(x = valence,
+                      y = energy,
+                      color = mode)) +
+  facet_wrap(~ mode, ncol = 2) +
+  geom_point() +
+  geom_hline(yintercept = .5) +
+  geom_vline(xintercept =.5) +
+  ylim(0,1) +
+  xlim(0,1) +
 
+
+  ggplot2::geom_point(aes(color = mode)) +
+  ggplot2::geom_hline(yintercept = .5) +
+  ggplot2::geom_vline(xintercept =.5) + 
+  ggplot2::ylim(0,1) + 
+  ggplot2::xlim(0,1)
+
+
+
+
+```
+
+## Visualise time and 
