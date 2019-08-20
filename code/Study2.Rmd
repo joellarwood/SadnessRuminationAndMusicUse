@@ -9,16 +9,15 @@ output:
 library(tidyverse)
 library(skimr)
 library(psych)
-
+library(visdat)
 
 
 ```
 
 ```{r s2ReadAndClean}
 
-s2raw <- read_csv("../data/s2_Spotify_wide.csv") %>% 
-  dplyr::filter(Progress > 50)
-
+s2raw <- read_csv("../data/s2_clean.csv") %>% 
+  dplyr::filter(Progress > 50 & remove == 0)
 
 names(s2raw)
 
@@ -28,9 +27,9 @@ s2 <- s2raw %>%
          Baseline = rowSums(dplyr::select(., deq_1_1:deq_1_4)),
          PostInduction = rowSums(dplyr::select(., deq_2_1: deq_2_4)),
          PostListening = rowSums(dplyr::select(., deq_3_1: deq_3_4)), 
-         #rrq_6 = 6 - rrq_6,
-         #rrq_9 = 6 - rrq_9,
-         #rrq_10 = 6 - rrq_10,
+         rrq_6 = 6 - rrq_6,
+         rrq_9 = 6 - rrq_9,
+         rrq_10 = 6 - rrq_10,
          musebaq = rowSums(dplyr::select(., musebaq_1:musebaq_9)))
 
 
@@ -58,6 +57,11 @@ psych::alpha(dplyr::select(s2, deq_2_1:deq_2_4))$total$raw_alpha
 psych::alpha(dplyr::select(s2, deq_3_1:deq_3_4))$total$raw_alpha
 psych::alpha(dplyr::select(s2, rrq_1:rrq_12))$total$raw_alpha
 psych::alpha(dplyr::select(s2, musebaq_1:musebaq_9))$total$raw_alpha
+
+```
+
+# 
+```{r manipulationcheck}
 
 ```
 
