@@ -34,13 +34,13 @@ s2 <- s2raw %>%
 
 
 s2 <- s2 %>% 
-  mutate(rum = rowMeans(dplyr::select(., rrq_1:rrq_12)))
+  mutate(rumination = rowMeans(dplyr::select(., rrq_1:rrq_12)))
 
 s2 %>% 
   dplyr::select(Baseline,
                 PostInduction,
                 PostListening,
-                rum,
+                rumination,
                 musebaq,
                 hours.listen,
                 reg.use_1,
@@ -60,8 +60,28 @@ psych::alpha(dplyr::select(s2, musebaq_1:musebaq_9))$total$raw_alpha
 
 ```
 
-# 
+# MNanipulation Check
 ```{r manipulationcheck}
+S2Manipulation <- t.test(s2$PostInduction, s2$Baseline, paired = TRUE) 
+
+apa::t_apa(S2Manipulation)
+
+```
+
+# Hypothesis Test
+```{r PreRegTest}
+s2long <- s2 %>% 
+  gather(key = Timepoint,
+         value = Sadness,
+         PostInduction, PostListening)
+
+
+S2glmm <- lme4::lmer(Sadness~Timepoint*rumination + (1 |id), data = s2long)
+
+tab_model(S2glmm)
+
+S2lm <- lm(PostListening ~ PostInduction + rumination, data = s2)
+tab_model(S2lm)
 
 ```
 

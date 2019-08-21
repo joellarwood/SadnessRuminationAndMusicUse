@@ -1,5 +1,8 @@
 install.packages("tidyverse")
 install.packages("afex")
+install.packages("ggridges")
+install.packages("apa")
+install.packages("apaTables")
 install.packages("multcomp")
 install.packages("sjPlot")
 install.packages("sjmisc")
@@ -8,9 +11,5 @@ install.packages("visdat")
 install.packages("skimr")
 install.packages("psych")
 install.packages("emmeans")
-<<<<<<< HEAD
-=======
 install.packages("lmerTest")
 install.package("brms")
-
->>>>>>> master

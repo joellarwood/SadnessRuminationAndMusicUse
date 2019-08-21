@@ -8,8 +8,8 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(ez)
 library(apa)
+library(apaTables)
 library(visdat)
 library(emmeans)
 library(sjPlot)
@@ -18,7 +18,6 @@ library(skimr)
 library(psych)
 library(multcomp)
 library(ggridges)
-library(ggrepel)
 ```
 
 ```{r load S1, message=FALSE, warning = FALSE}
@@ -108,23 +107,14 @@ psych::alpha(dplyr::select(s1dat, MARS3_1,
 
 ## ANOVA 
 
-<<<<<<< HEAD
-
-ANOVAs1 <- afex::aov_ez(id = "id",
-                        data = s1long,
-                        dv = "Sadness",
-                        between = c("Condition", "RumSplit"),
-                        within = "Timepoint",
-                        type = 2)
-=======
 ```{r}
+
 s1long <- gather (
   s1dat,
   key = Timepoint,
   value = Sadness,
   Baseline, PostInduction, PostListening
 )
->>>>>>> master
 
 ANOVAs1 <- afex::aov_car(
   formula = Sadness ~ Timepoint*Condition*RumSplit + Error(id/Timepoint),
@@ -132,32 +122,6 @@ ANOVAs1 <- afex::aov_car(
   type = 2,
 )
 
-<<<<<<< HEAD
-
-
-
-afex_plot(ANOVAs1,
-          x = "Timepoint",
-          trace = "Condition",
-          error = "within",
-          mapping = "color",
-          data_plot = FALSE) +
-  scale_x_discrete(labels = c("Baseline", "Post Induction", "Post Listening")) +
-  scale_color_discrete(labels = c("No Music \nControl", "Experimenter Selected \nMusic", "Participant Selected \nMusic")) +
-  ggplot2::ylim(0, 15) +
-  ggplot2::theme_classic(base_size = 12, 
-                         base_family = "Times New Roman") +
-  ggplot2::theme(legend.title = element_blank()) 
-
-
-summary(emmeans(ANOVAs1, pairwise ~  Timepoint))
-
-s1time <- emmeans(ANOVAs1, pairwise ~ Timepoint | Condition)
-
-contrast(s1time,
-         interaction = "pairwise")$emmeans 
-```
-=======
 afex::nice(ANOVAs1)
 
 afex::afex_plot(ANOVAs1,
@@ -173,6 +137,7 @@ afex::afex_plot(ANOVAs1,
 pairs(emmeans(ANOVAs1, ~ Timepoint|Condition))
 
 ```
+
 
 ## Rumination Correlation 
 ```{r}
@@ -211,9 +176,6 @@ s1dat %>%
 s1dat %>%
   dplyr::select(valence, energy, acousticness, danceability) %>% 
   apaTables::apa.cor.table()
->>>>>>> master
-
-`
 
 s1dat %>% 
   filter(mode == "minor" | mode == "major" & !is.na(track_name)) %>% 
@@ -226,8 +188,6 @@ s1dat %>%
   geom_vline(xintercept =.5) +
   ylim(0,1) +
   xlim(0,1) +
-
-
   ggplot2::geom_point(aes(color = mode)) +
   ggplot2::geom_hline(yintercept = .5) +
   ggplot2::geom_vline(xintercept =.5) + 
