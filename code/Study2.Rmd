@@ -10,20 +10,24 @@ library(tidyverse)
 library(skimr)
 library(psych)
 library(visdat)
-
+library(sjPlot)
 
 ```
 
 ```{r s2ReadAndClean}
 
-s2raw <- read_csv("../data/s2_clean.csv") %>% 
-  dplyr::filter(Progress > 50 & remove == 0)
-
+s2raw <- read_csv("../data/s2_spotify_join.csv") %>% 
+  dplyr::filter(Finished == 1) %>% 
+  naniar::replace_with_na_all(condition = ~.x == -99)
 names(s2raw)
 
 s2 <- s2raw %>% 
   mutate(id = rownames(.),
          age = age + 17,
+         gender = fct_recode(as.factor(.$gender), 
+                             "Male" = "0", 
+                             "Female" = "1",
+                             "Non-Binary/Not Disclosed" = "2"),
          Baseline = rowSums(dplyr::select(., deq_1_1:deq_1_4)),
          PostInduction = rowSums(dplyr::select(., deq_2_1: deq_2_4)),
          PostListening = rowSums(dplyr::select(., deq_3_1: deq_3_4)), 
@@ -76,12 +80,16 @@ s2long <- s2 %>%
          PostInduction, PostListening)
 
 
-S2glmm <- lme4::lmer(Sadness~Timepoint*rumination + (1 |id), data = s2long)
+S2glmm <- lme4::lmer(Sadness~1 + Timepoint + rumination + Timepoint*rumination + (1 |id), data = s2long)
 
 tab_model(S2glmm)
 
-S2lm <- lm(PostListening ~ PostInduction + rumination, data = s2)
-tab_model(S2lm)
+sjPlot::plot_model(S2glmm,
+                   type = "int",
+                   mdrt.values = "meansd")
+
+emmeans::emmip(S2glmm, rumination~Timepoint)
+
 
 ```
 
